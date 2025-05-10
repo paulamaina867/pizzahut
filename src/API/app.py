@@ -156,73 +156,94 @@ def mpesa_payment():
         print(response.text) #
         # Give a Response
         return jsonify({"message": "An MPESA Prompt has been sent to Your Phone, Please Check & Complete Payment"})
-
+    
 
 @app.route("/api/addpizza", methods=["POST"])
 def addpizza():
     if request.method == "POST":
-        # Extract details/data from the form on insomnia
+        # Extract form fields from the frontend
         pizza_name = request.form["pizza_name"]
         pizza_description = request.form["pizza_description"]
         pizza_cost = request.form["pizza_cost"]
+        category = request.form["category"]  # NEW FIELD from frontend
 
-        # The product photo you will be requesting for it from the files
+        # Handle the uploaded photo
         photo = request.files["pizza_photo"]
-        # Extract the photo name from the selected photo
         filename = photo.filename
-        # By use of the os(operating system library) take the path of the photo
         photo_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        # save your photo on that particular path
         photo.save(photo_path)
 
-        # establish a connection to the database
+        # Connect to the database
         connection = pymysql.connect(host="localhost", user="root", password="", database="pizzahut")
-
-        # create a cursor that will help to execute commands
         cursor = connection.cursor()
 
-        # structure the sql query to insert products to the table products on the db
-        sql = "INSERT INTO products(pizza_name,pizza_description,pizza_cost,pizza_photo) VALUES(%s, %s, %s, %s)"
+        # SQL query to insert data into the 'pizza' table (including 'category' column)
+        sql = """
+            INSERT INTO pizza (pizza_name, pizza_description, pizza_cost, pizza_photo, category)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        data = (pizza_name, pizza_description, pizza_cost, filename, category)
+        
+        try:
+            # Execute the query
+            cursor.execute(sql, data)
+            connection.commit()
 
-        # create a variable that will hold the data entered on the form
-        data = (pizza_name, pizza_description, pizza_cost, filename)
+            # Return success message as JSON
+            return jsonify({"Message": "Pizza details added successfully"})
+        except Exception as e:
+            # In case of error, rollback and return error message
+            connection.rollback()
+            return jsonify({"error": str(e)}), 500
+        finally:
+            # Close the database connection
+            cursor.close()
+            connection.close()
 
-        # use the cursor to excute the sql
-        cursor.execute(sql, data)
-
-        # commit the changes to the database
-        connection.commit()
-
-        # print out the os path
-        print(os.getcwd() + "/" + photo_path)
-
-        # tell whether the product has been inserted into the database
-        return jsonify({"Message": "pizza details added successfully"})
 
 @app.route("/api/getpizza", methods=["GET"])
-# create the function
 def getpizza():
-    # create/establish a connection between python and database
-    connection = pymysql.connect(host="localhost", user="root", password="", database="pizzahut")
+    # Get search and category from query parameters
+    search = request.args.get("search", "").lower()  # Optional search query (case insensitive)
+    category = request.args.get("category", "All")  # Default category is 'All'
 
-    # create a cursor to help you execute commands
-    # the dictcurso helps us to have the records in terms of key - value pair.
+    # Connect to the database
+    connection = pymysql.connect(host="localhost", user="root", password="", database="pizzahut")
     cursor = connection.cursor(pymysql.cursors.DictCursor)
 
-    # structure/ come up with the sql query to show all the records
+    # Base SQL query
     sql = "SELECT * FROM pizza"
+    params = []
 
-    # use the cursor to execute the sql.
-    cursor.execute(sql)
+    # Filter by category if specified
+    if category != "All":
+        sql += " WHERE category = %s"
+        params.append(category)
 
-    # come up with a variable that will hold all the records of the products table
-    pizza_details = cursor.fetchall()
+    # Filter by search term if specified
+    if search:
+        if category != "All":
+            sql += " AND (pizza_name LIKE %s OR pizza_description LIKE %s)"
+            params.extend(['%' + search + '%', '%' + search + '%'])
+        else:
+            sql += " WHERE (pizza_name LIKE %s OR pizza_description LIKE %s)"
+            params.extend(['%' + search + '%', '%' + search + '%'])
 
-    return jsonify(pizza_details)
+    try:
+        # Execute SQL query
+        cursor.execute(sql, tuple(params))
 
-app.run(debug=True)
+        # Fetch the result of the query
+        pizza_details = cursor.fetchall()
 
+        # Return the results as JSON
+        return jsonify(pizza_details)
 
+    except Exception as e:
+        # In case of an error, return error message
+        return jsonify({"error": str(e)}), 500
 
-
-
+    finally:
+        # Close the database connection
+        cursor.close()
+        connection.close()
