@@ -8,35 +8,40 @@ const PizzaAdventureChatBot = () => {
   const chatEndRef = useRef(null);
 
   const pairs = [
-    [/(hi|hello|hey)/i, [
-      "Hi there! I'm your Pizza Assistant. Want to check our menu or make an order?",
-      "Hey! Ready to dive into delicious pizza options? 🍕"
-    ]],
-    [/(.*)menu(.*)/i, [
-      "Here's our menu: Margherita, Pepperoni, BBQ Chicken, Veggie Supreme, Hawaiian. Type the name to learn more!",
-    ]],
-    [/(.*)topping(.*)/i, [
-      "We have cheese 🧀, mushrooms 🍄, olives 🫒, peppers 🌶️, and more. Add any you'd like!",
-    ]],
-    [/(.*)size(.*)/i, [
-      "Pizza sizes: Small (6”), Medium (9”), Large (12”). What's your pick?"
-    ]],
-    [/(.*)combo(.*)/i, [
-      "Try our deals! 💥 Party Pack (3 pizzas + drinks), Solo Deal (1 pizza + soda), Date Night (2 pizzas + dessert)."
-    ]],
-    [/(.*)order(.*)/i, [
-      "Awesome! Let me know the pizza type, size, and any toppings you'd like to add."
-    ]],
-    [/(margherita|pepperoni|bbq chicken|hawaiian|veggie)/i, [
-      "Yummy choice! 🍕 What size would you like—Small, Medium, or Large?"
-    ]],
-    [/quit/i, [
-      "Thanks for chatting! Enjoy your pizza adventure! 👋"
-    ]],
-    [/(.*)/, [
-      "Sorry, I didn’t catch that. Try saying 'menu', 'order', 'toppings', or 'combos'."
-    ]]
-  ];
+  [/(hi|hello|hey)/i, [
+    "Hi there! I'm your Pizza Assistant. Want to explore our special pizza categories or make a payment?"
+  ]],
+  [/(.*)menu(.*)/i, [
+    "Here's our menu categorized just for you! 🍽️\n👉 Type 'kids pizza', 'adult pizza', or 'healthy pizza' to explore."
+  ]],
+
+  // 🍕 Category Responses (based on your project)
+  [/\b(kids|children|kid-friendly|kids pizza)\b/i, [
+    "👶 Our Kids Pizzas are small and mild in flavor—perfect for children! Try our Cheesy Mini or Sweet Corn Delight!"
+  ]],
+  [/\b(adult|adults|adult pizza)\b/i, [
+    "🧑 Our Adult Pizzas are bold and satisfying! Try Pepperoni Inferno or BBQ Blast!"
+  ]],
+  [/\b(healthy|health-conscious|low calorie|diet|fit|light)\b/i, [
+    "🥗 Our Health-Conscious Pizzas are made with fresh, light ingredients. Try Veggie Fit or Gluten-Free Margherita!"
+  ]],
+
+  // Payment
+  [/(.*)payment(.*)|mpesa/i, [
+    "To buy a pizza, click 'Buy Now' and follow the M-Pesa payment instructions."
+  ]],
+
+  // Order (no delivery or cart system yet)
+  [/(.*)order(.*)/i, [
+    "You can click 'Buy Now' on your preferred pizza and complete the payment directly via M-Pesa. No cart or delivery yet!"
+  ]],
+
+  // General fallback
+  [/(.*)/, [
+    "Sorry, I didn’t understand that. You can ask for 'kids pizza', 'adult pizza', or 'healthy pizza'."
+  ]]
+];
+
 
   const getBotResponse = (input) => {
     for (let [pattern, responses] of pairs) {
